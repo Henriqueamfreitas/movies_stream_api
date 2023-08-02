@@ -22,8 +22,6 @@ const ensureNoDuplicatesMiddleWare = async (request: Request, response: Response
         })
     }
 
-    response.locals.movies = movies
-
     return next()
 }
 

@@ -2,7 +2,7 @@ import { QueryConfig } from "pg"
 import { Movie, MovieCreate, MovieResult } from "./interfaces"
 import { client } from "./database"
 import { Request, Response } from "express"
-import { format } from "path"
+import format from "pg-format"
 
 const insertQuery = async (req: Request, res: Response): Promise<Response> => {
     const payload:MovieCreate = req.body
@@ -22,21 +22,6 @@ const insertQuery = async (req: Request, res: Response): Promise<Response> => {
     const product: Movie = queryResult.rows[0]
 
     return res.status(201).json(product)
-}
-
-const readAllQuery = async (req: Request, res: Response): Promise<Response> => {    
-    const queryString: string = `
-        SELECT * FROM movies;
-    `
-
-    const queryConfig: QueryConfig = {
-        text: queryString,
-    }
-
-    const queryResult: MovieResult = await client.query(queryConfig)
-    const movies: Movie[] = queryResult.rows
-
-    return res.status(200).json(movies)
 }
 
 const readEspecificQuery = async (req: Request, res: Response): Promise<Response> => {    
@@ -125,4 +110,34 @@ const readEspecificCategoryQuery = async (req: Request, res: Response): Promise<
     return res.status(200).json(selectedMovies);
 }
 
-export { insertQuery, readAllQuery, readEspecificQuery, deleteEspecificQuery, readEspecificCategoryQuery }
+const updateQuery = async (req: Request, res: Response): Promise<Response> => {
+    const { body, params } = req
+
+    const updateColumns:string[] = Object.keys(body)
+    const updateValues:string[] = Object.values(body)
+
+    const queryTemplate: string = `
+        UPDATE "movies"
+        SET (%I) = ROW (%L)
+        WHERE id = $1
+        RETURNING *;
+    `
+
+    const queryFormat: string = format(
+        queryTemplate,
+        updateColumns,
+        updateValues
+    )
+
+    const queryConfig: QueryConfig = {
+        text: queryFormat,
+        values: [params.id]
+    }
+    
+    const queryResult: MovieResult = await client.query(queryConfig)
+    const updatedMovie: Movie = queryResult.rows[0]
+    return res.status(200).json(updatedMovie)
+}    
+
+
+export { insertQuery, readEspecificQuery, deleteEspecificQuery, readEspecificCategoryQuery, updateQuery }
