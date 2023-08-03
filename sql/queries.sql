@@ -12,3 +12,5 @@ WHERE id = 1;
 -- Deleção de um movie através do id
 DELETE FROM movies 
 WHERE id=4;
+
+
